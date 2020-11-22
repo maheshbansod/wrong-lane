@@ -3,7 +3,7 @@ var bgcolor = 'darkblue';
 var roadcolor = 'grey';
 var road_strip_width;
 var road_strip_height;
-var gameVelocity = 0.1;
+var gameVelocity = 0.1; //maybe increase this logarithmically
 var road_width;
 var road_start;
 var playerHorizontalVelocity = 0.4;
@@ -12,6 +12,7 @@ var opponents = [];
 var carWidth// = road_width/5;;
 var carHeight// = carWidth*2;
 var carVelocity// = 0;
+var nextspawn_t = 5000;    
 
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d');
@@ -141,23 +142,36 @@ function updateRoad(vel, dt) {
     ry = (ry+vel*dt)%(road_strip_height+road_strip_gap);
 }
 
-var lastOpCreat_t = 0;
+var lastOpCreat_t = 0, o_created = 0;
 function updateOpponents(dt) {
     //create new opponent with frequency 'opFreq'
 
-    if(lastOpCreat_t > 5000) { //change from constant
+    if(lastOpCreat_t > nextspawn_t && opponents.length < 5) {//nextspawn_t) { //change from constant
         opponents.push(
             //Maybe see cars with different widths and different velcoties
+            //don't spawn on the same place.
             initiateCar(road_start+carWidth/2 + Math.random()*(road_width - carWidth),
-                -carHeight,carWidth, carHeight, gameVelocity, 100, 'yellow')
+                -carHeight,carWidth, carHeight, gameVelocity+Math.random(), 100, 'yellow')
         );
-        //console.log("Created!");
+        o_created++;
+        if(nextspawn_t >= 1000) {
+            nextspawn_t -= 300;
+            gameVelocity += 0.01
+        }
+        nextspawn_t -= Math.log(o_created);
+        //console.log(nextspawn_t);
         lastOpCreat_t = 0;
     }
-    //console.log(opponents);
 
+    var to_remove = []; //out of bound opponents
     for(var i=0;i<opponents.length;i++) {
         opponents[i].y += dt*opponents[i].velocity;
+        if(opponents[i].y - opponents[i].height > canvas.height) {
+            to_remove.push(i);
+        }
+    }
+    for(var i=0;i<to_remove.length;i++) {
+        opponents.splice(to_remove[i],1);
     }
     lastOpCreat_t += dt;
 }
