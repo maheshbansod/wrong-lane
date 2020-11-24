@@ -30,9 +30,6 @@ function initiateCar(x,y,width, height, velocity, health, color='blue') {
         width: width,
         height: height,
         health: health,
-        draw: function(ctx) {
-            ;
-        }
     };
 
     return car;
@@ -166,10 +163,27 @@ function updateOpponents(dt) {
     var to_remove = []; //out of bound opponents
     for(var i=0;i<opponents.length;i++) {
         opponents[i].y += dt*opponents[i].velocity;
+
+        //handle avoiding opponent car collisions
+        for(var j=0;j<opponents.length;j++) {
+            if(i==j) continue;
+            if( opponents[i].x < opponents[j].x + opponents[j].width 
+                && opponents[i].x > opponents[j].x - opponents[i].width
+                && opponents[i].y + opponents[i].height< opponents[j].y + opponents[j].height 
+                && opponents[i].y + opponents[i].height> opponents[j].y) {
+                    opponents[i].y -= dt*opponents[i].velocity;
+                    opponents[i].velocity
+                        = Math.min(opponents[i].velocity,opponents[j].velocity);
+                    opponents[j].velocity = opponents[i].velocity;
+                }
+        }
+
+        //handle cars going out of bounds
         if(opponents[i].y - opponents[i].height > canvas.height) {
             to_remove.push(i);
         }
     }
+
     for(var i=0;i<to_remove.length;i++) {
         opponents.splice(to_remove[i],1);
     }
